@@ -5,8 +5,10 @@ import re
 import logging
 from feedgen.feed import FeedGenerator
 
+
 SITE_URL = 'https://whiplash.net/indices/cds.html'
-ARTICLES_JSON = 'articles.json'
+ARTICLES_FILE = 'articles.json'
+FEED_FILE = 'feed.xml'
 
 
 def obtain_latest_articles() -> list:
@@ -29,7 +31,7 @@ def obtain_latest_articles() -> list:
         else:
             break
 
-    logging.info('Parsing complete')
+    logging.info('Parsed successfully')
 
     return articles
 
@@ -40,7 +42,7 @@ def persist_articles(articles: list) -> None:
 
     try:
         logging.info('Opening stored articles')
-        file = open(ARTICLES_JSON, 'r')
+        file = open(ARTICLES_FILE, 'r')
 
         with file:
             articles_from_file = json.load(file)
@@ -63,14 +65,34 @@ def persist_articles(articles: list) -> None:
     articles_from_file.extend(articles_to_append)
     logging.info('Storing articles')
 
-    with open(ARTICLES_JSON, 'w') as file:
+    with open(ARTICLES_FILE, 'w') as file:
         json.dump(articles_from_file, file, indent=2)
 
-    logging.info('Storing complete')
+    logging.info('Articles had been stored successfully')
 
 
 def generate_feed() -> None:
-    return
+    logging.info('Generating feed')
+    fg = FeedGenerator()
+
+    fg.author({'name': 'Whiplash', 'email': 'jpwhiplash@gmail.com'})
+    fg.description('Feed de resenhas do Whiplash')
+    fg.title('Resenhas - Whiplash')
+    fg.logo('https://whiplash.net/favicon-32x32.png')
+    fg.link(href=SITE_URL, rel='self')
+
+    with open(ARTICLES_FILE, 'r') as file:
+        # FIXME: load in order
+        articles = json.load(file)
+
+        for article in articles:
+            fe = fg.add_entry()
+            fe.title(article['title'])
+            fe.link(href=article['link'])
+
+    fg.rss_file(FEED_FILE, pretty=True)
+
+    logging.info('Generation completed')
 
 
 def main():

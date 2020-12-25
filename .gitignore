@@ -129,3 +129,4 @@ dmypy.json
 .pyre/
 
 articles.json
+feed.xml
