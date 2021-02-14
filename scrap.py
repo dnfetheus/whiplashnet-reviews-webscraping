@@ -12,15 +12,15 @@ from feedgen.feed import FeedGenerator
 
 CONTENT_URL = 'https://whiplash.net/indices/cds.html'
 
-SCRAPING_FOLDER_PATH = f'{Path.home()}/.whiplash'
-FEED_FILE_PATH = f'{SCRAPING_FOLDER_PATH}/feed.xml'
+DEFAULT_SCRAPING_FOLDER_PATH = f'{Path.home()}/.whiplash'
+DEFAULT_FEED_FILE_PATH = f'{DEFAULT_SCRAPING_FOLDER_PATH}/feed.xml'
 
 
 def get_arguments() -> dict:
     logger.info('Validating arguments')
 
     args = {
-        'output_path': sys.argv[1] if len(sys.argv) >= 2 else FEED_FILE_PATH
+        'output_file_path': sys.argv[1] if len(sys.argv) >= 2 else DEFAULT_FEED_FILE_PATH
     }
 
     return args
@@ -73,9 +73,9 @@ def generate_feed(articles: iter, args: dict) -> None:
         fe.link(href=article['link'])
 
     if len(sys.argv) < 2:
-        Path(SCRAPING_FOLDER_PATH).mkdir(exist_ok=True)
+        Path(DEFAULT_SCRAPING_FOLDER_PATH).mkdir(exist_ok=True)
     
-    fg.rss_file(args['output_path'], pretty=True)
+    fg.rss_file(args['output_file_path'], pretty=True)
 
     logger.info('Feed file has been generated successfully')
 
