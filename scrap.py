@@ -1,3 +1,4 @@
+import sys
 import requests
 import re
 import logging as logger
@@ -9,25 +10,40 @@ from bs4 import BeautifulSoup
 from feedgen.feed import FeedGenerator
 
 
-SITE_URL = 'https://whiplash.net/indices/cds.html'
+CONTENT_URL = 'https://whiplash.net/indices/cds.html'
 
-SCRAPING_FOLDER = f'{Path.home()}/.whiplash'
-FEED_FILE = f'{SCRAPING_FOLDER}/feed.xml'
+SCRAPING_FOLDER_PATH = f'{Path.home()}/.whiplash'
+FEED_FILE_PATH = f'{SCRAPING_FOLDER_PATH}/feed.xml'
+
+
+def get_arguments() -> dict:
+    logger.info('Validating arguments')
+
+    args = {
+        'generation_path': sys.argv[1] if len(sys.argv) >= 2 else FEED_FILE_PATH
+    }
+
+    return args
 
 
 def get_article(elem) -> dict:
     article_link = elem.a['href']
     file = re.search(r'\d*-.*\.html', article_link).group()
     article_id = re.match(r'\d*', file).group()
-    article = {'id': article_id, 'title': elem.a.get_text(), 'link': article_link}
+
+    article = {
+        'id': article_id,
+        'title': elem.a.get_text(),
+        'link': article_link
+    }
 
     return article
 
 
-def obtain_latest_articles() -> list:
-    logger.info(f'Requesting content to {SITE_URL}')
+def obtain_latest_articles() -> iter:
+    logger.info(f'Requesting content to {CONTENT_URL}')
 
-    req = requests.get(SITE_URL)
+    req = requests.get(CONTENT_URL)
 
     logger.info('Parsing content')
 
@@ -35,37 +51,39 @@ def obtain_latest_articles() -> list:
     content = soup.find(id='conteudo1')
     title = content.find('h3')
 
-    articles = list(map(get_article, takewhile(lambda elem: elem.name == 'p', title.next_siblings)))
-
-    logger.info('Parsed successfully')
+    required_elements = takewhile(lambda elem: elem.name == 'p', title.next_siblings)
+    articles = map(get_article, required_elements)
 
     return articles
 
 
-def generate_feed(articles: list) -> None:
-    logger.info('Generating feed')
+def generate_feed(articles: iter, args: dict) -> None:
+    logger.info('Generating feed file')
 
     fg = FeedGenerator()
     fg.author({'name': 'Whiplash', 'email': 'jpwhiplash@gmail.com'})
     fg.description('Feed não oficial de resenhas do Whiplash')
     fg.title('Resenhas - Whiplash')
     fg.logo('https://whiplash.net/favicon-32x32.png')
-    fg.link(href=SITE_URL, rel='self')
+    fg.link(href=CONTENT_URL, rel='self')
 
     for article in articles:
         fe = fg.add_entry()
         fe.title(article['title'])
         fe.link(href=article['link'])
 
-    Path(SCRAPING_FOLDER).mkdir(exist_ok=True)
-    fg.rss_file(FEED_FILE, pretty=True)
+    if len(sys.argv) < 2:
+        Path(SCRAPING_FOLDER_PATH).mkdir(exist_ok=True)
+    
+    fg.rss_file(args['generation_path'], pretty=True)
 
-    logger.info('Generation completed')
+    logger.info('Feed file has been generated successfully')
 
 
 def main():
+    args = get_arguments()
     articles = obtain_latest_articles()
-    generate_feed(articles)
+    generate_feed(articles, args)
 
 
 if __name__ == '__main__':
