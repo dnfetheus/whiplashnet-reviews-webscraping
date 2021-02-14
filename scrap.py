@@ -20,7 +20,7 @@ def get_arguments() -> dict:
     logger.info('Validating arguments')
 
     args = {
-        'generation_path': sys.argv[1] if len(sys.argv) >= 2 else FEED_FILE_PATH
+        'output_path': sys.argv[1] if len(sys.argv) >= 2 else FEED_FILE_PATH
     }
 
     return args
@@ -75,7 +75,7 @@ def generate_feed(articles: iter, args: dict) -> None:
     if len(sys.argv) < 2:
         Path(SCRAPING_FOLDER_PATH).mkdir(exist_ok=True)
     
-    fg.rss_file(args['generation_path'], pretty=True)
+    fg.rss_file(args['output_path'], pretty=True)
 
     logger.info('Feed file has been generated successfully')
 
