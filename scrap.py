@@ -16,6 +16,12 @@ DEFAULT_SCRAPING_FOLDER_PATH = f'{Path.home()}/.whiplash'
 DEFAULT_FEED_FILE_PATH = f'{DEFAULT_SCRAPING_FOLDER_PATH}/feed.xml'
 
 
+def main():
+    args = get_arguments()
+    articles = obtain_latest_articles()
+    generate_feed(articles, args)
+
+
 def get_arguments() -> dict:
     logger.info('Validating arguments')
 
@@ -24,20 +30,6 @@ def get_arguments() -> dict:
     }
 
     return args
-
-
-def get_article(elem) -> dict:
-    article_link = elem.a['href']
-    file = re.search(r'\d*-.*\.html', article_link).group()
-    article_id = re.match(r'\d*', file).group()
-
-    article = {
-        'id': article_id,
-        'title': elem.a.get_text(),
-        'link': article_link
-    }
-
-    return article
 
 
 def obtain_latest_articles() -> iter:
@@ -55,6 +47,20 @@ def obtain_latest_articles() -> iter:
     articles = map(get_article, required_elements)
 
     return articles
+
+
+def get_article(elem) -> dict:
+    article_link = elem.a['href']
+    file = re.search(r'\d*-.*\.html', article_link).group()
+    article_id = re.match(r'\d*', file).group()
+
+    article = {
+        'id': article_id,
+        'title': elem.a.get_text(),
+        'link': article_link
+    }
+
+    return article
 
 
 def generate_feed(articles: iter, args: dict) -> None:
@@ -78,12 +84,6 @@ def generate_feed(articles: iter, args: dict) -> None:
     fg.rss_file(args['output_file_path'], pretty=True)
 
     logger.info('Feed file has been generated successfully')
-
-
-def main():
-    args = get_arguments()
-    articles = obtain_latest_articles()
-    generate_feed(articles, args)
 
 
 if __name__ == '__main__':
